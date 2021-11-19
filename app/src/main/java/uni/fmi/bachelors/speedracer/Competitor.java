@@ -16,11 +16,15 @@ public class Competitor {
     int maxX;
     int maxY;
     int speed;
+    boolean crashed;
+    boolean playerCrashed;
 
     int screenSizeX;
     int screenSizeY;
 
     Random random;
+    int count = 0;
+    int xMovementDirection = 0;
 
     int[] skins = {R.drawable.competitor1, R.drawable.competitor2, R.drawable.competitor3,
                     R.drawable.competitor4, R.drawable.competitor5, R.drawable.competitor6,
@@ -31,7 +35,7 @@ public class Competitor {
     public Competitor(Context context , int screenSizeX, int screenSizeY, int speed){
         this.context = context;
         random = new Random();
-        this.speed = speed - random.nextInt( speed / 2 ) + 1;
+        this.speed = random.nextInt( speed / 2 ) + 1;
         this.screenSizeX = screenSizeX;
         this.screenSizeY = screenSizeY;
 
@@ -39,6 +43,22 @@ public class Competitor {
     }
 
     public void resetCompetitor(){
+        count++;
+
+        crashed = false;
+        playerCrashed = false;
+
+        if(count == 2){
+            count = 0;
+            if(random.nextBoolean()){
+                xMovementDirection = 1;
+            }else{
+                xMovementDirection = -1;
+            }
+        }else{
+            xMovementDirection = 0;
+        }
+
         bitmap = BitmapFactory.decodeResource(context.getResources(), skins[random.nextInt(skins.length)]);
 
         maxX = screenSizeX - bitmap.getWidth();
@@ -50,16 +70,32 @@ public class Competitor {
         collisionDetection = new Rect(x, y, x + bitmap.getWidth(), y + bitmap.getHeight());
     }
 
-    public void update(int playerSpeed){
-
+    public void update(int playerSpeed){//10   9
+        x += xMovementDirection;
         y += playerSpeed - speed;
 
         if(y > maxY){
             resetCompetitor();
-            this.speed = playerSpeed - random.nextInt(playerSpeed / 2) + 1;
+            this.speed = random.nextInt(playerSpeed / 2) + 1;
+        }
+
+        if(x < 0){
+            x = 0;
+            xMovementDirection = 0;
+        }else if(x > maxX){
+            x = maxX;
+            xMovementDirection = 0;
         }
 
         collisionDetection.top = y;
         collisionDetection.bottom = y + bitmap.getHeight();
+        collisionDetection.left = x;
+        collisionDetection.right = x + bitmap.getWidth();
+    }
+
+    public void crashed() {
+        xMovementDirection = 0;
+        crashed = true;
+        speed = 0;
     }
 }

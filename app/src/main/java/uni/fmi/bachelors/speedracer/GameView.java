@@ -18,11 +18,13 @@ import java.util.function.DoubleToIntFunction;
 
 public class GameView extends SurfaceView implements Runnable{
     public static final int MOVEMENT = 5;
+    private final Bitmap heartBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.heart);
     int score = 0;
     Player player;
     ArrayList<RoadDot> dots = new ArrayList<>();
     ArrayList<RoadLine> lines = new ArrayList<>();
     ArrayList<Competitor> competitors = new ArrayList<>();
+    int lives = 3;
 
     boolean isAlive = true;
 
@@ -33,6 +35,7 @@ public class GameView extends SurfaceView implements Runnable{
 
     int screenSizeX;
     int screenSizeY;
+    private Bitmap crashBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.crash);
 
     public GameView(Context context, int screenSizeX, int screenSizeY) {
         super(context);
@@ -75,8 +78,8 @@ public class GameView extends SurfaceView implements Runnable{
     @Override
     public void run() {
         while(isAlive){
-            draw();
             update();
+            draw();
             refreshRate();
             score++;
         }
@@ -109,8 +112,28 @@ public class GameView extends SurfaceView implements Runnable{
         for(Competitor comp : competitors){
             comp.update(player.speed);
 
-            if(Rect.intersects(comp.collisionDetection, player.collisionDetection)){
-                isAlive = false;
+            if(!comp.playerCrashed && Rect.intersects(comp.collisionDetection, player.collisionDetection)){
+                lives--;
+                if(lives == 0){
+                    isAlive = false;
+                    player.crashed = true;
+                }
+                comp.crashed();
+                comp.playerCrashed = true;
+            }
+        }
+
+        for(Competitor comp : competitors){
+
+            for(Competitor secondComp : competitors){
+                if(comp == secondComp){
+                    continue;
+                }
+
+                if(Rect.intersects(comp.collisionDetection, secondComp.collisionDetection)){
+                    comp.crashed();
+                    secondComp.crashed();
+                }
             }
         }
 
@@ -134,14 +157,28 @@ public class GameView extends SurfaceView implements Runnable{
 
             for(Competitor comp : competitors){
                 canvas.drawBitmap(comp.bitmap, comp.x, comp.y, paint);
+                if(comp.crashed){
+                    canvas.drawBitmap(crashBitmap, comp.x + 2, comp.y + 2, paint);
+                }
             }
 
             paint.setColor(Color.WHITE);
             paint.setTextSize(40);
 
-            canvas.drawText("Score: " + score, 50 ,50 ,paint);
+            canvas.drawText("Score: " + score, 250 ,50 ,paint);
+
+            for(int i = 1; i <= lives ; i++){
+                canvas.drawBitmap(
+                        heartBitmap,
+                        50 * i, 50, paint);
+            }
+
 
             canvas.drawBitmap(player.bitmap, player.x, player.y, paint);
+
+            if(player.crashed){
+                canvas.drawBitmap(crashBitmap, player.x + 2, player.y + 2, paint );
+            }
 
             surfaceHolder.unlockCanvasAndPost(canvas);
         }

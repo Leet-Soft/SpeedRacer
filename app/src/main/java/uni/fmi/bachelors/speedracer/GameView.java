@@ -14,17 +14,23 @@ import android.view.SurfaceView;
 import android.view.VelocityTracker;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.function.DoubleToIntFunction;
 
 public class GameView extends SurfaceView implements Runnable{
-    public static final int MOVEMENT = 5;
+    public static int MOVEMENT = 5;
     private final Bitmap heartBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.heart);
     int score = 0;
     Player player;
     ArrayList<RoadDot> dots = new ArrayList<>();
     ArrayList<RoadLine> lines = new ArrayList<>();
     ArrayList<Competitor> competitors = new ArrayList<>();
+
+    Rect powerUp = null;
+    Random random = new Random();
+
     int lives = 3;
+    float ferodoLife = 1;
 
     boolean isAlive = true;
 
@@ -49,7 +55,7 @@ public class GameView extends SurfaceView implements Runnable{
         surfaceHolder = getHolder();
 
         for(int i = 0; i < 8000; i++){
-            dots.add(new RoadDot(screenSizeX, screenSizeY, player.speed));
+            dots.add(new RoadDot(screenSizeX, screenSizeY));
         }
 
         Bitmap lineBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.road_line);
@@ -63,7 +69,7 @@ public class GameView extends SurfaceView implements Runnable{
 
             for(int j = 1; j < 3 ; j++){
 
-                RoadLine line = new RoadLine(getContext(), screenSizeY, player.speed);
+                RoadLine line = new RoadLine(getContext(), screenSizeY);
                 line.x = laneWidth * j;
                 line.y = i * lineAndSpacing;
 
@@ -97,20 +103,44 @@ public class GameView extends SurfaceView implements Runnable{
 
     private void update() {
 
+        if(score % 200 == 0){
+            player.speed++;
+            MOVEMENT = (int)player.speed / 2;
+        }
+
         if(score % 1000 == 0){
-            competitors.add(new Competitor(getContext(), screenSizeX, screenSizeY, player.speed));
+            competitors.add(new Competitor(getContext(), screenSizeX, screenSizeY, (int)player.speed));
+        }
+
+
+        if(powerUp != null){
+            powerUp.top += player.speed;
+            powerUp.bottom += player.speed;
+
+            if (Rect.intersects(powerUp, player.collisionDetection)){
+                ferodoLife = 1;
+                powerUp.top = screenSizeY + 1;
+            }
+
+            if(powerUp.top > screenSizeY)
+                powerUp = null;
+        }
+
+        if(score > 1 && score % 1000 == 0){
+            int powerUpX = random.nextInt(screenSizeX) - 100;
+            powerUp = new Rect(powerUpX, -30 ,powerUpX + 30,0);
         }
 
         for(RoadLine line: lines){
-            line.update();
+            line.update((int)player.speed);
         }
 
         for(RoadDot dot : dots){
-            dot.update();
+            dot.update((int)player.speed);
         }
 
         for(Competitor comp : competitors){
-            comp.update(player.speed);
+            comp.update((int)player.speed);
 
             if(!comp.playerCrashed && Rect.intersects(comp.collisionDetection, player.collisionDetection)){
                 lives--;
@@ -167,12 +197,21 @@ public class GameView extends SurfaceView implements Runnable{
 
             canvas.drawText("Score: " + score, 250 ,50 ,paint);
 
+            paint.setColor(Color.YELLOW);
+
+            canvas.drawRect(new Rect(50, 100, 51 + (int)((screenSizeX - 100) * ferodoLife), 150), paint);
+
             for(int i = 1; i <= lives ; i++){
                 canvas.drawBitmap(
                         heartBitmap,
                         50 * i, 50, paint);
             }
 
+
+            if(powerUp != null){
+                paint.setColor(Color.BLUE);
+                canvas.drawRect(powerUp, paint);
+            }
 
             canvas.drawBitmap(player.bitmap, player.x, player.y, paint);
 
@@ -222,9 +261,16 @@ public class GameView extends SurfaceView implements Runnable{
                     xMovement = -MOVEMENT;
                 }
 
-//                if(velocityTracker.getYVelocity() > 0){
-//                    yMovement = MOVEMENT;
-//                }else if(velocityTracker.getYVelocity() < 0){
+                if(velocityTracker.getYVelocity() > 0 && ferodoLife > 0){
+                    ferodoLife -= 0.005;
+
+                    if(player.speed > 5)
+                        player.speed -= 0.1;
+
+                    Log.wtf("ferodo", ferodoLife + "");
+                }
+//                else
+//                if(velocityTracker.getYVelocity() < 0){
 //                    yMovement = -MOVEMENT;
 //                }
 

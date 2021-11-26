@@ -9,20 +9,18 @@ public class RoadLine {
     int y;
 
     int maxY;
-    int speed;
 
     Bitmap bitmap;
 
-    public RoadLine(Context context, int screenSizeY, int speed){
+    public RoadLine(Context context, int screenSizeY){
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.road_line);
         y = bitmap.getHeight() * -1;
 
         maxY = screenSizeY;
-        this.speed = speed;
     }
 
-    public void update(){
-        y += speed;
+    public void update(int playerSpeed){
+        y +=  playerSpeed;
 
         if(y > maxY){
             y = bitmap.getHeight() * -1;

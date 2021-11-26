@@ -9,22 +9,19 @@ public class RoadDot {
     int y;
     int maxX;
     int maxY;
-    int speed;
-
     Random random;
 
-    public RoadDot(int screenSizeX, int screenSizeY, int speed){
+    public RoadDot(int screenSizeX, int screenSizeY){
         maxX = screenSizeX;
         maxY = screenSizeY;
-        this.speed = speed;
         random = new Random();
 
         x = random.nextInt(maxX);
         y = random.nextInt(maxY);
     }
 
-    public void update(){
-        y += speed;
+    public void update(int playerSpeed){
+        y += playerSpeed;
 
         if(y > maxY){
             y = random.nextInt(10) * -1;

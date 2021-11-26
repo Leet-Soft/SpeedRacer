@@ -7,7 +7,7 @@ import android.graphics.Rect;
 
 public class Player {
 
-    public int speed;
+    public float speed;
     public boolean crashed;
     Context context;
     int maxX;
